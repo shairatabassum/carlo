@@ -10,15 +10,19 @@ class CameraRig:
     base_location = carla.Location(z=3.0)
     base_transform = carla.Transform(base_location, base_rotation)
 
-    def __init__(self, transform: carla.Transform = base_transform, camera_settings: CameraSettings = base_camera_settings):
+    def __init__(self, transform: carla.Transform = base_transform, camera_settings: CameraSettings = base_camera_settings, camtype: str = "rgb"):
         self.transform = transform
         self.camera_settings = camera_settings
+        self.camtype = camtype
         self.camera = None
         self.camera_queue = None
         self.previous_image = None
 
     def create_camera(self, parent: carla.Actor) -> 'CameraRig':
-        self.camera = Camera(parent=parent, transform=self.transform, settings=self.camera_settings)
+        if self.camtype=='rgb':
+            self.camera = Camera(parent=parent, transform=self.transform, settings=self.camera_settings)
+        elif self.camtype=='depth':
+            self.camera = Camera(parent=parent, blueprint='sensor.camera.depth', transform=self.transform, settings=self.camera_settings)
         self.camera_queue = self.camera.add_numpy_queue()
         self.camera.start()
         return self

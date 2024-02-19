@@ -163,5 +163,5 @@ def run_session(experiment: Experiment):
         cv2.destroyWindow(window_title)
 
 
-experiment = experiments.experiment_23
+experiment = experiments.experiment_test
 run_session(experiment)

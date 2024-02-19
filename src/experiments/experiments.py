@@ -119,7 +119,7 @@ experiment_2 = Experiment(
 camera_settings = [
     CameraSettings(image_size_x=200, image_size_y=150, fov=90),
     CameraSettings(image_size_x=400, image_size_y=300, fov=90),
-    CameraSettings(image_size_x=800, image_size_y=600, fov=90),
+    CameraSettings(image_size_x=1242, image_size_y=375, fov=90),
     CameraSettings(image_size_x=1200, image_size_y=900, fov=90),
     CameraSettings(image_size_x=1600, image_size_y=1200, fov=90),
 ]
@@ -299,6 +299,23 @@ experiment_8 = Experiment(
 ##############################################
 # Experiment 9 and 10: Combined baseline
 ##############################################
+
+experiment_test = Experiment(
+    experiment_name="carla_depth",
+    experiments=[
+        ExperimentSettings(
+            ticks_per_image=2,
+            percentage_speed_difference=50,
+            turns=2,
+            camera_rigs=[
+                CameraRig(transform=carla.Transform(carla.Location(z=3.0),
+                                                    carla.Rotation(yaw=-10)), camera_settings=camera_settings[2], camtype='rgb'),
+                CameraRig(transform=carla.Transform(carla.Location(z=3.0),
+                                                    carla.Rotation(yaw=10)), camera_settings=camera_settings[2], camtype='depth'),
+            ]
+        ),
+    ]
+)
 
 experiment_9 = Experiment(
     experiment_name="exp_combined_baseline",
