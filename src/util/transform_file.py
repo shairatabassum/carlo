@@ -15,7 +15,8 @@ class TransformFile:
     def __init__(self, output_dir=None) -> None:
         self.frames = []
         self.intrinsics = {}
-        self.count = 0
+        self.countImage = 0
+        self.countDepth = 0
 
         root_path = Path(os.curdir)
         if output_dir is not None:
@@ -26,19 +27,25 @@ class TransformFile:
 
         self.output_dir.mkdir(exist_ok=True, parents=True)
         self.image_dir = self.output_dir / 'images'
+        self.depth_dir = self.output_dir / 'depth'
         self.image_dir.mkdir(exist_ok=True, parents=True)
+        self.depth_dir.mkdir(exist_ok=True, parents=True)
 
-    def append_frame(self, image: np.ndarray, transform: carla.Transform):
-
+    def append_frame(self, image: np.ndarray, transform: carla.Transform, camtype: str = "rgb"):
         # Save the image to output
-        file_path = str(self.image_dir / f'{self.count:04d}.png')
-        cv2.imwrite(file_path, image)
-        self.count += 1
-
-        self.frames.append({
+        if camtype == "rgb":
+            file_path = str(self.image_dir / f'{self.countImage:04d}.png')
+            cv2.imwrite(file_path, image)
+            self.countImage += 1
+            self.frames.append({
             'file_path': f'images/{file_path.split("/")[-1]}',
             'transform_matrix': carla_to_nerf(transform)
-        })
+            })
+        elif camtype == "depth":
+            file_path = str(self.depth_dir / f'{self.countDepth:04d}.png')
+            cv2.imwrite(file_path, image)
+            self.countDepth += 1
+        
 
     def compute_intrinsics(self, image_size_x, image_size_y, fov):
         # Intrinsics from COLMAP

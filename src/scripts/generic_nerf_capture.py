@@ -134,7 +134,7 @@ def run_session(experiment: Experiment):
                         transform = camera_rig.camera.actor.get_transform()
                         transform = transform if run.location_noise is None else apply_noise(
                             transform, run.location_noise)
-                        transform_file.append_frame(camera_rig.previous_image, transform)
+                        transform_file.append_frame(camera_rig.previous_image, transform, camera_rig.camtype)
 
                     current_location = ego.get_location()
                     distance_traveled += get_distance_traveled(prev_location, current_location)

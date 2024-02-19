@@ -301,7 +301,7 @@ experiment_8 = Experiment(
 ##############################################
 
 experiment_test = Experiment(
-    experiment_name="carla_depth",
+    experiment_name="carla_withdepth",
     experiments=[
         ExperimentSettings(
             ticks_per_image=2,
