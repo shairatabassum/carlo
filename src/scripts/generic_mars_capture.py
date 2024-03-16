@@ -2,7 +2,9 @@ import os
 from pathlib import Path
 from typing import Literal
 
+import math
 import numpy as np
+from numpy.linalg import pinv, inv
 import queue
 import cv2
 import carla
@@ -15,6 +17,7 @@ from src.experiments.experiment_settings import Experiment, GaussianNoise
 from src.util.confirm_overwrite import confirm_path_overwrite
 from src.util.create_camera_rigs_from_rig import create_camera_rigs_from_rig
 from src.util.create_slurm_script import create_slurm_script
+from src.util.carla_to_nerf import carla_to_nerf_back
 from src.util.timer import Timer
 from src.util.transform_file_mars import TransformFile
 from examples.client_bounding_boxes import ClientSideBoundingBoxes
@@ -114,7 +117,7 @@ def run_session(experiment: Experiment):
 
     # Create directory for experiment
     root_path = Path(os.curdir)
-    experiment_path = root_path / "runs" / experiment.experiment_name
+    experiment_path = root_path / "runs_mars" / experiment.experiment_name
     os.makedirs(experiment_path, exist_ok=True)
 
     # Save the experiment settings to the experiment directory
@@ -134,7 +137,7 @@ def run_session(experiment: Experiment):
         for index, run in enumerate(experiment.experiments):            
             ego = spawn_ego(autopilot=True, spawn_point=run.spawn_transform, filter="vehicle.tesla.model3")
             setup_traffic_manager(session.traffic_manager, ego, run.turns, run.percentage_speed_difference, run.path)
-            spawn_vehicles(count=15, autopilot=True, filter="vehicle")
+            vehicle_info = spawn_vehicles(count=25, autopilot=True, filter="vehicle")
 
             session.world.tick()
             w_frame = session.world.get_snapshot().frame
@@ -156,6 +159,7 @@ def run_session(experiment: Experiment):
             next_action = None
             distance_traveled = 0
             prev_location = run.spawn_transform.location
+            frameID = 0
 
             # Create cameras
             camera_rigs = [camera_rig.create_camera(ego) for camera_rig in run.camera_rigs] if run.camera_rigs is not None else []
@@ -168,14 +172,13 @@ def run_session(experiment: Experiment):
             cv2.namedWindow(window_title, cv2.WINDOW_AUTOSIZE)
 
             # Create a TransformFile
-            transform_file = TransformFile(output_dir=experiment_path / str(index))
+            transform_file = TransformFile(output_dir=experiment_path, camera_rigs=camera_rigs)
 
             # Set the intrinsics of the camera
             camera_settings = camera_rigs[0].get_camera_settings()
             image_w = camera_settings.image_size_x
             image_h = camera_settings.image_size_y
-            transform_file.set_intrinsics(image_w, image_h, camera_settings.fov)
-            K = transform_file.get_intrinsics()
+            K = transform_file.get_intrinsics(image_w, image_h, camera_settings.fov)
 
 
             while not (should_stop(next_action, stop_next_straight, distance_traveled, run.stop_distance)):
@@ -191,94 +194,150 @@ def run_session(experiment: Experiment):
 
                 # Store image and update distance traveled every n-th tick.
                 if image_tick % ticks_per_image == 0:
-                    # print("==============================================")
-                    # print("==============================================")
-                    # print(image_tick)
-                    # print("==============================================")
-                    # print("==============================================")
+                    camera_rgb_ID = 0
+                    camera_depth_ID = 0
                     for camera_rig in camera_rigs:
                         transform = camera_rig.camera.actor.get_transform()
                         transform = transform if run.location_noise is None else apply_noise(
                             transform, run.location_noise)
-                        transform_file.append_frame(camera_rig.previous_image, transform, camera_rig.camtype)
                         img = camera_rig.previous_image.astype(np.uint8)
-                        # if camera_rig.camtype=="rgb":
-                        world_2_camera = transform.get_inverse_matrix()
-                        veh_dict = {}
-                        
-                        # Getting bounding box information
-                        # bboxes = ClientSideBoundingBoxes.get_bounding_boxes(vehicles, camera_rig.camera.actor, K)
+                        if camera_rig.camtype=="rgb":
+                            world_2_camera = transform.get_inverse_matrix()
+                            veh_dict = {}
+                            # Getting bounding box information
+                            # bboxes = ClientSideBoundingBoxes.get_bounding_boxes(vehicles, camera_rig.camera.actor, K)
+                            
+                            for npc in session.world.get_actors().filter('*vehicle*'):
+                                if npc.id != ego.id:
+                                    bb = npc.bounding_box
+                                    speed = np.sum([np.abs(npc.get_velocity().x),np.abs(npc.get_velocity().y), np.abs(npc.get_velocity().z)])
+                                    dist = npc.get_transform().location.distance(ego.get_transform().location)
+                                    
+                                    if speed > 1.0 and dist < 75:
+                                        cam_dict = {}
+                                        visible = False
+                                        # Calculate the dot product between the forward vector of the vehicle and the vector between the vehicle
+                                        # and the other vehicle. We threshold this dot product to limit to drawing bounding boxes IN FRONT OF THE CAMERA
+                                        forward_vec = transform.get_forward_vector()
+                                        ray = npc.get_transform().location - ego.get_transform().location
 
-                        for npc in session.world.get_actors().filter('*vehicle*'):
-                            if npc.id != ego.id:
-                                bb = npc.bounding_box
-                                speed = np.sum([np.abs(npc.get_velocity().x),np.abs(npc.get_velocity().y), np.abs(npc.get_velocity().z)])
-                                dist = npc.get_transform().location.distance(ego.get_transform().location)
+                                        #if left_vec.dot(ray) > 1 or forward_vec.dot(ray) > 1 or right_vec.dot(ray) > 1:
+                                        if forward_vec.dot(ray) > 1:
+                                            box_dict = {}
+                                            #print(speed)
 
-                                if speed > 1.0 and dist < 75:
-                                    cam_dict = {}
-                                    visible = False
-                                    # Calculate the dot product between the forward vector of the vehicle and the vector between the vehicle
-                                    # and the other vehicle. We threshold this dot product to limit to drawing bounding boxes IN FRONT OF THE CAMERA
-                                    forward_vec = transform.get_forward_vector()
-                                    ray = npc.get_transform().location - ego.get_transform().location
-
-                                    #if left_vec.dot(ray) > 1 or forward_vec.dot(ray) > 1 or right_vec.dot(ray) > 1:
-                                    if forward_vec.dot(ray) > 1:
-                                        box_dict = {}
-                                        #print(speed)
-                                        bbox_center = np.array(carla.Transform(bb.location, bb.rotation).get_matrix())
-                                        npc2w = np.array(npc.get_transform().get_matrix())
-                                        bbox_center2w = np.dot(npc2w, bbox_center)
-
-                                        verts = [v for v in bb.get_world_vertices(npc.get_transform())]
-                                        x_max = -10000
-                                        x_min = 10000
-                                        y_max = -10000
-                                        y_min = 10000
-
-                                        for vert in verts:
-                                            p = get_image_point(vert, K, world_2_camera)
-                                            # Find the rightmost vertex
-                                            if p[0] > x_max:
-                                                x_max = p[0]
-                                            # Find the leftmost vertex
-                                            if p[0] < x_min:
-                                                x_min = p[0]
-                                            # Find the highest vertex
-                                            if p[1] > y_max:
-                                                y_max = p[1]
-                                            # Find the lowest  vertex
-                                            if p[1] < y_min:
-                                                y_min = p[1]
-                                        if x_min < 0 and not x_max < 0 and x_max < image_w:
-                                            x_min = 0
-                                        if x_max > image_w and not x_min > image_w and x_min >= 0:
-                                            x_max = image_w
-                                        if y_min < 0 and not y_max < 0 and y_max < image_h:
-                                            y_min = 0
-                                        if y_max > image_h and not y_min > image_h and y_min >= 0:
-                                            y_max = image_h
-                                        if x_min >= 0 and x_max <= image_w and y_min >= 0 and y_max <= image_h:
-                                            visible = True
-                                            box_dict['center'] = carla2Nerf(bbox_center2w)
-                                            box_dict['extent'] = np.array([bb.extent.y, bb.extent.z, bb.extent.x])
-
-                                            box_dict['x_max'] = int(x_max)
-                                            box_dict['x_min'] = int(x_min)
-                                            box_dict['y_max'] = int(y_max)
-                                            box_dict['y_min'] = int(y_min)
+                                            # PROCESS 1: take bounding box location, transform it to vehicle position
+                                            # but it will give center point location and will require z-shifting
+                                            # bbox_center = np.array(carla.Transform(bb.location, bb.rotation).get_matrix())
+                                            # npc2w = np.array(npc.get_transform().get_matrix())
+                                            # bbox_center2w = np.dot((npc2w), bbox_center)
+                                            # w_x = bbox_center2w[0][3]
+                                            # w_y = bbox_center2w[1][3]
+                                            # w_z = bbox_center2w[2][3]
+                                            # bbox_location = " ".join(map(str, [(w_x), (w_y), (w_z)]))
                                             
-                                            for edge in edges:
-                                                p1 = get_image_point(verts[edge[0]], K, world_2_camera)
-                                                p2 = get_image_point(verts[edge[1]], K, world_2_camera)
-                                                cv2.line(img, (int(p1[0]), int(p1[1])), (int(p2[0]), int(p2[1])), (255, 0, 0, 255), 1)
-                                            veh_dict[str(npc.id)] = box_dict
-                        time_dict[str(w_frame)] = veh_dict
-                        # print(time_dict[str(w_frame)])
-                        if image is None:
-                            image = img
-                        else:
+                                            # PROCESS 2: directly take the vehicle location, requires z-shifting to reach mid-point
+                                            # npc_location = npc.get_transform().location
+                                            # w_x = npc_location.x
+                                            # w_y = npc_location.y
+                                            # w_z = npc_location.z
+                                            # # w_z += bb.extent.z #TO REACH MIDPOINT
+
+                                            npc_location = np.array(carla.Transform(bb.location, bb.rotation).get_matrix())
+                                            npc_location[2][3] -= bb.extent.z
+                                            npc2w = np.array(transform.get_matrix())
+                                            npc_transformed= np.dot(npc2w, npc_location)
+                                            w_x = npc_transformed[0][3]
+                                            w_y = npc_transformed[1][3]
+                                            w_z = npc_transformed[2][3]
+                                            
+
+                                            npc_rotation = npc.get_transform().rotation
+                                            w_pitch = npc_rotation.yaw + 90
+                                            w_yaw = npc_rotation.roll + 90
+                                            w_roll = npc_rotation.pitch
+
+                                            w_pitch = 0
+                                            w_yaw = 0
+                                            w_roll =0
+
+
+                                            # define here the final value of obj_location and rotation
+                                            obj_location = " ".join(map(str, [(w_x), -(w_y), (w_z)]))
+                                            obj_rotation = " ".join(map(str, [w_pitch, w_yaw, w_roll]))
+
+                                            
+                                            verts = [v for v in bb.get_world_vertices(npc.get_transform())]
+                                            x_max = -10000
+                                            x_min = 10000
+                                            y_max = -10000
+                                            y_min = 10000
+
+                                            for vert in verts:
+                                                p = get_image_point(vert, K, world_2_camera)
+                                                # Find the rightmost vertex
+                                                if p[0] > x_max:
+                                                    x_max = p[0]
+                                                # Find the leftmost vertex
+                                                if p[0] < x_min:
+                                                    x_min = p[0]
+                                                # Find the highest vertex
+                                                if p[1] > y_max:
+                                                    y_max = p[1]
+                                                # Find the lowest  vertex
+                                                if p[1] < y_min:
+                                                    y_min = p[1]
+                                            if x_min < 0 and not x_max < 0 and x_max < image_w:
+                                                x_min = 0
+                                            if x_max > image_w and not x_min > image_w and x_min >= 0:
+                                                x_max = image_w
+                                            if y_min < 0 and not y_max < 0 and y_max < image_h:
+                                                y_min = 0
+                                            if y_max > image_h and not y_min > image_h and y_min >= 0:
+                                                y_max = image_h
+                                            if x_min >= 0 and x_max <= image_w and y_min >= 0 and y_max <= image_h:
+                                                visible = True
+                                                box_dict['world_location'] = obj_location
+                                                box_dict['world_rotation'] = obj_rotation
+                                                box_dict['extent'] = np.array([bb.extent.y, bb.extent.z, bb.extent.x])
+
+                                                box_dict['x_max'] = int(x_max)
+                                                box_dict['x_min'] = int(x_min)
+                                                box_dict['y_max'] = int(y_max)
+                                                box_dict['y_min'] = int(y_min)
+                                                
+                                                for edge in edges:
+                                                    p1 = get_image_point(verts[edge[0]], K, world_2_camera)
+                                                    p2 = get_image_point(verts[edge[1]], K, world_2_camera)
+                                                    cv2.line(img, (int(p1[0]), int(p1[1])), (int(p2[0]), int(p2[1])), (255, 0, 0, 255), 1)
+                                                veh_dict[str(npc.id)] = box_dict
+                                                
+                                                # rotational y
+                                                # degree = ego.get_transform().rotation.yaw - npc.get_transform().rotation.yaw
+                                                # deg_to_rad = degree * math.pi / 180
+                                                # rotation_y = deg_to_rad % math.pi
+
+                                                transform_file.append_bboxes(frameID, camera_rgb_ID, npc.id, int(x_min), int(x_max), int(y_min), int(y_max))
+                                                transform_file.append_poses(frameID, camera_rgb_ID, npc.id, box_dict['extent'], box_dict['world_location'], box_dict['world_rotation'])
+                                            else:
+                                                transform_file.append_bboxes(frameID, camera_rgb_ID, npc.id, 0, 0, 0, 0)
+                                                transform_file.append_poses(frameID, camera_rgb_ID, npc.id, np.array([0, 0, 0]), "0 0 0", "0 0 0")
+                                        else:
+                                            transform_file.append_bboxes(frameID, camera_rgb_ID, npc.id, 0, 0, 0, 0)
+                                            transform_file.append_poses(frameID, camera_rgb_ID, npc.id, np.array([0, 0, 0]), "0 0 0", "0 0 0")
+
+
+                            time_dict[str(w_frame)] = veh_dict
+                            # print(time_dict[str(w_frame)])
+                            if image is None:
+                                image = img
+                            else:
+                                image = cv2.hconcat([image, img])
+                            transform_file.append_frame(camera_rig.previous_image, transform, camera_rig.camtype, camera_rgb_ID, frameID)
+                            camera_rgb_ID += 1
+                        elif camera_rig.camtype=="depth":
+                            transform_file.append_frame(camera_rig.previous_image, transform, camera_rig.camtype, camera_depth_ID, frameID)
+                            camera_depth_ID += 1
                             image = cv2.hconcat([image, img])
 
                     cv2.imshow(window_title, image)
@@ -287,7 +346,8 @@ def run_session(experiment: Experiment):
                     current_location = ego.get_location()
                     distance_traveled += get_distance_traveled(prev_location, current_location)
                     prev_location = current_location
-                    # print(f"Total distance traveled: {distance_traveled:.2f} meters")
+                    print(f"Total distance traveled: {distance_traveled:.2f} meters")
+                    frameID += 1
 
                 # Determine if we should stop the next straight
                 next_action = session.traffic_manager.get_next_action(ego)[0]
@@ -295,7 +355,7 @@ def run_session(experiment: Experiment):
                 #     turns += 1
                 #     if (turns == run.turns):
                 #         stop_next_straight = True
-                if distance_traveled>=300:
+                if distance_traveled>=80:
                     stop_next_straight = True
                 previous_action = next_action
 
@@ -305,6 +365,9 @@ def run_session(experiment: Experiment):
                 image_tick += 1
 
             transform_file.export_transforms()
+            transform_file.export_bbox()
+            transform_file.export_pose()
+            transform_file.export_vehicle_info(vehicle_info=vehicle_info)
             
             destroy_actors(session.world, "vehicle*")
             destroy_actors(session.world, "sensor*")

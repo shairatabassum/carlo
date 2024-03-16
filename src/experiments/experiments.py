@@ -301,7 +301,7 @@ experiment_8 = Experiment(
 ##############################################
 
 experiment_test = Experiment(
-    experiment_name="carla_vehicles",
+    experiment_name="movingvehicles_sensor",
     experiments=[
         ExperimentSettings(
             ticks_per_image=2,
@@ -309,13 +309,13 @@ experiment_test = Experiment(
             turns=3,
             camera_rigs=[
                 CameraRig(transform=carla.Transform(carla.Location(z=3.0),
-                                                    carla.Rotation(yaw=-30)), camera_settings=camera_settings[2], camtype='rgb'),
+                                                    carla.Rotation(yaw=-10)), camera_settings=camera_settings[2], camtype='rgb'),
                 CameraRig(transform=carla.Transform(carla.Location(z=3.0),
-                                                    carla.Rotation(yaw=-30)), camera_settings=camera_settings[2], camtype='depth'),
+                                                    carla.Rotation(yaw=-10)), camera_settings=camera_settings[2], camtype='depth'),
                 CameraRig(transform=carla.Transform(carla.Location(z=3.0),
-                                                    carla.Rotation(yaw=30)), camera_settings=camera_settings[2], camtype='rgb'),
+                                                    carla.Rotation(yaw=10)), camera_settings=camera_settings[2], camtype='rgb'),
                 CameraRig(transform=carla.Transform(carla.Location(z=3.0),
-                                                    carla.Rotation(yaw=30)), camera_settings=camera_settings[2], camtype='depth'),
+                                                    carla.Rotation(yaw=10)), camera_settings=camera_settings[2], camtype='depth'),
             ]
         ),
     ]

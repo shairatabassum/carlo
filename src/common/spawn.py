@@ -44,6 +44,7 @@ def spawn_vehicles(
     """Spawn vehicles at random spawn points."""
     actors: List[carla.Vehicle] = []
     spawn_points = session.map.get_spawn_points()
+    vehicle_info = []
     while len(actors) < count:
         spawn_point = random.choice(spawn_points)
         # print(f"List of session blueprints: {session.blueprints}")
@@ -54,12 +55,13 @@ def spawn_vehicles(
             actors.append(actor)
             if autopilot:
                 actor.set_autopilot(True)
+            vehicle_info.append(f"{actor.id} Car {blueprint.id} Red\n")
         else:
             if retries == 0:
                 break
             retries -= 1
     info(f'Spawned {len(actors)} vehicles')
-    return actors
+    return vehicle_info
 
 def spawn_ego(
     filter: str = 'vehicle.*',
