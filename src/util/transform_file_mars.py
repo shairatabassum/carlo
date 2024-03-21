@@ -8,7 +8,7 @@ import numpy as np
 
 from datetime import datetime
 
-from src.util.carla_to_nerf import carla_to_nerf
+from src.util.carla_to_nerf import carla_to_marsnerf
 
 
 class TransformFile:
@@ -20,6 +20,7 @@ class TransformFile:
         self.bboxes = []
         self.poses = []
         self.info = []
+        self.obj_extrinsics = []
 
         root_path = Path(os.curdir)
         self.output_dir = root_path / output_dir
@@ -48,7 +49,19 @@ class TransformFile:
             file_path = str(self.image_dir / f'Camera_{cameraID}' / f'rgb_{frameID:05d}.jpg')
             cv2.imwrite(file_path, image)
 
-            transform = carla_to_nerf(transform)
+            transform = carla_to_marsnerf(transform)
+            transform = np.array(transform.get_matrix())
+            
+            # R_opengl = transform[:3, :3]
+            # t_opengl = transform[:3, 3]
+            # R_opencv = np.transpose(R_opengl)
+            # R_opencv[1:3, :] *= -1
+            # t_opencv = -np.dot(R_opencv, t_opengl)
+            # pose_opencv = np.zeros((4, 4))
+            # pose_opencv[:3, :3] = R_opencv
+            # pose_opencv[:3, 3] = t_opencv
+            # pose_opencv[3, 3] = 1
+            
             ext_transform = ' '.join(str(item) for sublist in transform for item in sublist)
             self.extrinsics.append(f"{frameID} {cameraID} {ext_transform}\n")
 
@@ -64,6 +77,12 @@ class TransformFile:
         self.bboxes.append(
             f"{frameID} {cameraID} {trackID} {x_min} {x_max} {y_min} {y_max} 0 0 0 True\n"
             )
+        
+    def append_obj_extrinsics(self, frameID, cameraID, trackID, obj_transform):
+        obj_transform = carla_to_marsnerf(obj_transform)
+        obj_transform = obj_transform.get_matrix()
+        obj_ext_transform = ' '.join(str(item) for sublist in obj_transform for item in sublist)
+        self.obj_extrinsics.append(f"{frameID} {cameraID} {trackID} {obj_ext_transform}\n")
 
     def append_poses(self, frameID, cameraID, trackID, dimension, location, rotation):
         width = "{:.6f}".format(2*dimension[0])
@@ -99,6 +118,12 @@ class TransformFile:
             for ext in self.extrinsics:
                 f.write(ext)
         print(f"Saved extrinsics to {extrinsic_path}")
+        obj_extrinsic_path = self.output_dir / 'obj_extrinsic.txt'
+        with open(obj_extrinsic_path, 'w+') as f:
+            f.write("frame cameraID trackID r1,1 r1,2 r1,3 t1 r2,1 r2,2 r2,3 t2 r3,1 r3,2 r3,3 t3 0 0 0 1\n")
+            for obj_ext in self.obj_extrinsics:
+                f.write(obj_ext)
+        print(f"Saved object extrinsics to {obj_extrinsic_path}")
         intrinsic_path = self.output_dir / 'intrinsic.txt'
         with open(intrinsic_path, 'w+') as f:
             f.write("frame cameraID K[0,0] K[1,1] K[0,2] K[1,2]\n")

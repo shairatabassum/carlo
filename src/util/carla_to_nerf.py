@@ -17,7 +17,7 @@ def carla_to_nerf(camera_transform: carla.Transform):
     
     return blender_matrix.get_matrix()
 
-def carla_to_nerf_back(camera_transform: carla.Transform):
+def carla_to_marsnerf(camera_transform: carla.Transform):
     """
         Convert a carla.Transform to a 4x4 matrix that can be used in Nerfstudio.
     """

@@ -4,6 +4,7 @@ from typing import Literal
 
 import math
 import numpy as np
+from math import atan2, asin, sqrt, degrees
 from numpy.linalg import pinv, inv
 import queue
 import cv2
@@ -17,10 +18,24 @@ from src.experiments.experiment_settings import Experiment, GaussianNoise
 from src.util.confirm_overwrite import confirm_path_overwrite
 from src.util.create_camera_rigs_from_rig import create_camera_rigs_from_rig
 from src.util.create_slurm_script import create_slurm_script
-from src.util.carla_to_nerf import carla_to_nerf_back
+from src.util.carla_to_nerf import carla_to_marsnerf
 from src.util.timer import Timer
 from src.util.transform_file_mars import TransformFile
 from examples.client_bounding_boxes import ClientSideBoundingBoxes
+
+
+def mat2transform(M):
+    R = M[:3, :3]
+    T = M[:3, 3]
+    yaw = atan2(R[1, 0], R[0, 0])
+    pitch = atan2(-R[2, 0], sqrt(R[2, 1]**2 + R[2, 2]**2))
+    roll = atan2(R[2, 1], R[2, 2])
+
+    determinant = np.linalg.det(R)
+    if determinant > 0:  # Left-handed system
+        pitch = -pitch
+        roll = -roll
+    return T, (degrees(pitch), degrees(yaw), degrees(roll))
 
 
 def setup_traffic_manager(traffic_manager: carla.TrafficManager, ego: carla.Actor, turns: int, percentage_speed_difference: int, path: Literal["left-loop", "city-wander"]):
@@ -243,27 +258,70 @@ def run_session(experiment: Experiment):
                                             # w_z = npc_location.z
                                             # # w_z += bb.extent.z #TO REACH MIDPOINT
 
-                                            npc_location = np.array(carla.Transform(bb.location, bb.rotation).get_matrix())
-                                            npc_location[2][3] -= bb.extent.z
-                                            npc2w = np.array(transform.get_matrix())
-                                            npc_transformed= np.dot(npc2w, npc_location)
-                                            w_x = npc_transformed[0][3]
-                                            w_y = npc_transformed[1][3]
-                                            w_z = npc_transformed[2][3]
+
+                                            # PROCESS 3: Bounding box transform to Sensor/NPC (OLE FUNCTION)
+                                            # npc_location = np.array(carla.Transform(bb.location, bb.rotation).get_matrix())
+                                            # npc_location = np.array(npc.get_transform().get_matrix())
+                                            # npc_location[2][3] -= bb.extent.z
+                                            # npc2w = np.array(transform.get_matrix())
+                                            # npc_world = np.dot(npc2w, npc_location)
+
+                                            # npc_tran, npc_rot = mat2transform(npc_world)
+                                            # npc_world_transform = carla.Transform(
+                                            #     carla.Location(x=npc_tran[0], y=npc_tran[1], z=npc_tran[2]),
+                                            #     carla.Rotation(pitch=npc_rot[0], yaw=npc_rot[1], roll=npc_rot[2])
+                                            # )
+
+                                            # npc_location = carla.Transform(bb.location, bb.rotation)
+                                            # cam_matrix = transform.get_matrix()
+                                            # proj = np.dot(cam_matrix, npc_matrix)
+                                            # npc_tran, npc_rot = mat2transform(proj)
+                                            # npc_world_transform = carla.Transform(
+                                            #     carla.Location(x=npc_tran[0], y=npc_tran[1], z=npc_tran[2]),
+                                            #     carla.Rotation(pitch=npc_rot[0], yaw=npc_rot[1], roll=npc_rot[2])
+                                            # )
+                                            # npc_location = np.array(npc.get_transform().get_matrix())
+                                            # cam_transform = np.array(transform.get_matrix())
+                                            # npc_to_camworld = np.dot(cam_transform, npc_location)
+                                            # trans, rot = mat2transform(npc_to_camworld)
+                                            # npc_transform = carla.Transform(
+                                            #     carla.Location(x=trans[0], y=trans[1], z=trans[2]),
+                                            #     carla.Rotation(pitch=rot[0], yaw=rot[1], roll=rot[2])
+                                            # )
+                                            # npc_world_transform_opengl = carla_to_marsnerf(npc_transform)
+                                            npc_world_transform_opengl = carla_to_marsnerf(npc.get_transform())
+                                            # npc_world_transform_opengl = np.array(npc_world_transform_opengl.get_matrix())
                                             
-
-                                            npc_rotation = npc.get_transform().rotation
-                                            w_pitch = npc_rotation.yaw + 90
-                                            w_yaw = npc_rotation.roll + 90
-                                            w_roll = npc_rotation.pitch
-
-                                            w_pitch = 0
-                                            w_yaw = 0
-                                            w_roll =0
+                                            # R_opengl = npc_world_transform_opengl[:3, :3]
+                                            # t_opengl = npc_world_transform_opengl[:3, 3]
+                                            # R_opencv = np.transpose(R_opengl)
+                                            # R_opencv[1:3, :] *= -1
+                                            # t_opencv = -np.dot(R_opencv, t_opengl)
+                                            # pose_opencv = np.zeros((4, 4))
+                                            # pose_opencv[:3, :3] = R_opencv
+                                            # pose_opencv[:3, 3] = t_opencv
+                                            # pose_opencv[3, 3] = 1
+                                            
+                                            # trans, rot = mat2transform(pose_opencv)
+                                            # npc_world_transform_opengl = carla.Transform(
+                                            #     carla.Location(x=trans[0], y=trans[1], z=trans[2]),
+                                            #     carla.Rotation(pitch=rot[0], yaw=rot[1], roll=rot[2])
+                                            # )
+                                            
+                                            w_x = npc_world_transform_opengl.location.x
+                                            w_y = npc_world_transform_opengl.location.y
+                                            w_z = npc_world_transform_opengl.location.z
+                                            w_z -= bb.extent.z
+                                            w_pitch = npc_world_transform_opengl.rotation.pitch * (np.pi/180)
+                                            w_yaw = npc_world_transform_opengl.rotation.yaw * (np.pi/180)
+                                            w_roll = npc_world_transform_opengl.rotation.roll * (np.pi/180)
+                                            # w_pitch = npc_world_transform_opengl.rotation.pitch
+                                            # w_yaw = npc_world_transform_opengl.rotation.yaw
+                                            # w_roll = npc_world_transform_opengl.rotation.roll
 
 
                                             # define here the final value of obj_location and rotation
-                                            obj_location = " ".join(map(str, [(w_x), -(w_y), (w_z)]))
+                                            obj_location = " ".join(map(str, [w_x, w_y, w_z]))
                                             obj_rotation = " ".join(map(str, [w_pitch, w_yaw, w_roll]))
 
                                             
@@ -319,6 +377,7 @@ def run_session(experiment: Experiment):
 
                                                 transform_file.append_bboxes(frameID, camera_rgb_ID, npc.id, int(x_min), int(x_max), int(y_min), int(y_max))
                                                 transform_file.append_poses(frameID, camera_rgb_ID, npc.id, box_dict['extent'], box_dict['world_location'], box_dict['world_rotation'])
+                                                transform_file.append_obj_extrinsics(frameID, camera_rgb_ID, npc.id, npc.get_transform())
                                             else:
                                                 transform_file.append_bboxes(frameID, camera_rgb_ID, npc.id, 0, 0, 0, 0)
                                                 transform_file.append_poses(frameID, camera_rgb_ID, npc.id, np.array([0, 0, 0]), "0 0 0", "0 0 0")

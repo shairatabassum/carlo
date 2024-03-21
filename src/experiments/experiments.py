@@ -301,7 +301,7 @@ experiment_8 = Experiment(
 ##############################################
 
 experiment_test = Experiment(
-    experiment_name="movingvehicles_sensor",
+    experiment_name="movingcars",
     experiments=[
         ExperimentSettings(
             ticks_per_image=2,
