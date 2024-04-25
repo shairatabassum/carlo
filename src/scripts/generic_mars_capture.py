@@ -79,34 +79,6 @@ def apply_noise(transform: carla.Transform, noise: GaussianNoise):
     return transform
 
 
-def carla2Nerf(transform):
-    #mat = np.array(transform.get_matrix())
-    mat = transform
-    rotz = np.array([[0.0000000,  -1.0000000,  0.0000000, 0.0],
-                     [1.0000000,  0.0000000,  0.0000000, 0.0],
-                     [0.0000000, 0.0000000,  1.0000000, 0.0],
-                     [0.0, 0.0, 0.0, 1.0]])  # 90deg around z-axis
-    roty = np.array([[0.0000000,  0.0000000,  1.0000000, 0.0],
-                     [0.0000000,  1.0000000,  0.0000000, 0.0],
-                     [-1.0000000,  0.0000000,  0.0000000, 0.0],
-                     [0.0, 0.0, 0.0, 1.0]])  # 90deg around y-axis
-
-    trafo1 = np.array([[0.0000000, 1.0000000, 0.0000000, 0.0],
-                       [0.0000000, 0.0000000, 1.0000000, 0.0],
-                       [-1.0000000, 0.0000000, 0.0000000, 0.0],
-                       [0.0, 0.0, 0.0, 1.0]])
-    trafo2 = np.array([[0.0000000, 0.0000000, -1.0000000, 0.0],
-                       [1.0000000, 0.0000000, 0.0000000, 0.0],
-                       [0.0000000, 1.0000000, 0.0000000, 0.0],
-                       [0.0, 0.0, 0.0, 1.0]])
-    carla2opengl = np.matmul(roty, rotz)
-    #pose = np.matmul(mat, carla2opengl)
-    #pose[0, 3] = -pose[0, 3]
-    pose = np.matmul(trafo1, mat)
-    pose = np.matmul(pose, trafo2)
-    return pose
-
-
 def get_image_point(loc, K, w2c):
     # Calculate 2D projection of 3D coordinate
     # Format the input coordinate (loc is a carla.Position object)
@@ -152,7 +124,7 @@ def run_session(experiment: Experiment):
         for index, run in enumerate(experiment.experiments):            
             ego = spawn_ego(autopilot=True, spawn_point=run.spawn_transform, filter="vehicle.tesla.model3")
             setup_traffic_manager(session.traffic_manager, ego, run.turns, run.percentage_speed_difference, run.path)
-            vehicle_info = spawn_vehicles(count=25, autopilot=True, filter="vehicle")
+            vehicle_info = spawn_vehicles(count=35, autopilot=True, filter="vehicle")
 
             session.world.tick()
             w_frame = session.world.get_snapshot().frame
@@ -211,6 +183,8 @@ def run_session(experiment: Experiment):
                 if image_tick % ticks_per_image == 0:
                     camera_rgb_ID = 0
                     camera_depth_ID = 0
+                    camera_class_seg_ID = 0
+                    camera_inst_seg_ID = 0
                     for camera_rig in camera_rigs:
                         transform = camera_rig.camera.actor.get_transform()
                         transform = transform if run.location_noise is None else apply_noise(
@@ -228,8 +202,7 @@ def run_session(experiment: Experiment):
                                     speed = np.sum([np.abs(npc.get_velocity().x),np.abs(npc.get_velocity().y), np.abs(npc.get_velocity().z)])
                                     dist = npc.get_transform().location.distance(ego.get_transform().location)
                                     
-                                    if speed > 1.0 and dist < 75:
-                                        cam_dict = {}
+                                    if dist < 75:
                                         visible = False
                                         # Calculate the dot product between the forward vector of the vehicle and the vector between the vehicle
                                         # and the other vehicle. We threshold this dot product to limit to drawing bounding boxes IN FRONT OF THE CAMERA
@@ -250,14 +223,6 @@ def run_session(experiment: Experiment):
                                             # w_y = bbox_center2w[1][3]
                                             # w_z = bbox_center2w[2][3]
                                             # bbox_location = " ".join(map(str, [(w_x), (w_y), (w_z)]))
-                                            
-                                            # PROCESS 2: directly take the vehicle location, requires z-shifting to reach mid-point
-                                            # npc_location = npc.get_transform().location
-                                            # w_x = npc_location.x
-                                            # w_y = npc_location.y
-                                            # w_z = npc_location.z
-                                            # # w_z += bb.extent.z #TO REACH MIDPOINT
-
 
                                             # PROCESS 3: Bounding box transform to Sensor/NPC (OLE FUNCTION)
                                             # npc_location = np.array(carla.Transform(bb.location, bb.rotation).get_matrix())
@@ -311,7 +276,7 @@ def run_session(experiment: Experiment):
                                             w_x = npc_world_transform_opengl.location.x
                                             w_y = npc_world_transform_opengl.location.y
                                             w_z = npc_world_transform_opengl.location.z
-                                            w_z -= bb.extent.z
+                                            w_x += bb.extent.z
                                             w_pitch = npc_world_transform_opengl.rotation.pitch * (np.pi/180)
                                             w_yaw = npc_world_transform_opengl.rotation.yaw * (np.pi/180)
                                             w_roll = npc_world_transform_opengl.rotation.roll * (np.pi/180)
@@ -364,10 +329,15 @@ def run_session(experiment: Experiment):
                                                 box_dict['y_max'] = int(y_max)
                                                 box_dict['y_min'] = int(y_min)
                                                 
+                                                colorflag = 0
                                                 for edge in edges:
                                                     p1 = get_image_point(verts[edge[0]], K, world_2_camera)
                                                     p2 = get_image_point(verts[edge[1]], K, world_2_camera)
-                                                    cv2.line(img, (int(p1[0]), int(p1[1])), (int(p2[0]), int(p2[1])), (255, 0, 0, 255), 1)
+                                                    if colorflag == 3 or colorflag==4 or colorflag==9 or colorflag==10:
+                                                        cv2.line(img, (int(p1[0]), int(p1[1])), (int(p2[0]), int(p2[1])), (255, 0, 0, 255), 2)
+                                                    else:
+                                                        cv2.line(img, (int(p1[0]), int(p1[1])), (int(p2[0]), int(p2[1])), (255, 0, 0, 255), 1)
+                                                    colorflag += 1
                                                 veh_dict[str(npc.id)] = box_dict
                                                 
                                                 # rotational y
@@ -379,15 +349,14 @@ def run_session(experiment: Experiment):
                                                 transform_file.append_poses(frameID, camera_rgb_ID, npc.id, box_dict['extent'], box_dict['world_location'], box_dict['world_rotation'])
                                                 transform_file.append_obj_extrinsics(frameID, camera_rgb_ID, npc.id, npc.get_transform())
                                             else:
-                                                transform_file.append_bboxes(frameID, camera_rgb_ID, npc.id, 0, 0, 0, 0)
-                                                transform_file.append_poses(frameID, camera_rgb_ID, npc.id, np.array([0, 0, 0]), "0 0 0", "0 0 0")
+                                                transform_file.append_bboxes(frameID, camera_rgb_ID, 0, 0, 0, 0, 0)
+                                                transform_file.append_poses(frameID, camera_rgb_ID, 0, np.array([0, 0, 0]), "0 0 0", "0 0 0")
                                         else:
-                                            transform_file.append_bboxes(frameID, camera_rgb_ID, npc.id, 0, 0, 0, 0)
-                                            transform_file.append_poses(frameID, camera_rgb_ID, npc.id, np.array([0, 0, 0]), "0 0 0", "0 0 0")
+                                            transform_file.append_bboxes(frameID, camera_rgb_ID, 0, 0, 0, 0, 0)
+                                            transform_file.append_poses(frameID, camera_rgb_ID, 0, np.array([0, 0, 0]), "0 0 0", "0 0 0")
 
 
                             time_dict[str(w_frame)] = veh_dict
-                            # print(time_dict[str(w_frame)])
                             if image is None:
                                 image = img
                             else:
@@ -398,7 +367,14 @@ def run_session(experiment: Experiment):
                             transform_file.append_frame(camera_rig.previous_image, transform, camera_rig.camtype, camera_depth_ID, frameID)
                             camera_depth_ID += 1
                             image = cv2.hconcat([image, img])
-
+                        elif camera_rig.camtype=="class_seg":
+                            transform_file.append_frame(camera_rig.previous_image, transform, camera_rig.camtype, camera_class_seg_ID, frameID)
+                            camera_class_seg_ID += 1
+                            image = cv2.hconcat([image, img])
+                        elif camera_rig.camtype=="inst_seg":
+                            transform_file.append_frame(camera_rig.previous_image, transform, camera_rig.camtype, camera_inst_seg_ID, frameID)
+                            camera_inst_seg_ID += 1
+                            image = cv2.hconcat([image, img])
                     cv2.imshow(window_title, image)
 
                     
@@ -414,7 +390,7 @@ def run_session(experiment: Experiment):
                 #     turns += 1
                 #     if (turns == run.turns):
                 #         stop_next_straight = True
-                if distance_traveled>=80:
+                if distance_traveled>=200:
                     stop_next_straight = True
                 previous_action = next_action
 

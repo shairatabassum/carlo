@@ -28,11 +28,17 @@ class TransformFile:
         self.output_dir.mkdir(exist_ok=True, parents=True)
         self.image_dir = self.output_dir / 'frames' / 'rgb'
         self.depth_dir = self.output_dir / 'frames' / 'depth'
+        self.class_seg_dir = self.output_dir / 'frames' / 'classSegmentation'
+        self.inst_seg_dir = self.output_dir / 'frames' / 'instanceSegmentation'
         self.image_dir.mkdir(exist_ok=True, parents=True)
         self.depth_dir.mkdir(exist_ok=True, parents=True)
+        self.class_seg_dir.mkdir(exist_ok=True, parents=True)
+        self.inst_seg_dir.mkdir(exist_ok=True, parents=True)
 
         camera_rgb_ID = 0
         camera_depth_ID = 0
+        camera_class_seg_ID = 0
+        camera_inst_seg_ID = 0
         for camera_rig in camera_rigs:
             if camera_rig.camtype == "rgb":
                 cam_folder = os.path.join(self.image_dir, f'Camera_{camera_rgb_ID}')
@@ -42,6 +48,14 @@ class TransformFile:
                 cam_folder = os.path.join(self.depth_dir, f'Camera_{camera_depth_ID}')
                 os.makedirs(cam_folder, exist_ok=True)
                 camera_depth_ID += 1
+            elif camera_rig.camtype == "class_seg":
+                cam_folder = os.path.join(self.class_seg_dir, f'Camera_{camera_class_seg_ID}')
+                os.makedirs(cam_folder, exist_ok=True)
+                camera_class_seg_ID += 1
+            elif camera_rig.camtype == "inst_seg":
+                cam_folder = os.path.join(self.inst_seg_dir, f'Camera_{camera_inst_seg_ID}')
+                os.makedirs(cam_folder, exist_ok=True)
+                camera_inst_seg_ID += 1
 
     def append_frame(self, image: np.ndarray, transform: carla.Transform, camtype: str = "rgb", cameraID: int = 0, frameID: int = 0):
         # Save the image to output
@@ -72,6 +86,13 @@ class TransformFile:
             file_path = str(self.depth_dir / f'Camera_{cameraID}' / f'depth_{frameID:05d}.png')
             cv2.imwrite(file_path, image)
             # self.countDepth += 1
+            
+        elif camtype == "class_seg":
+            file_path = str(self.class_seg_dir / f'Camera_{cameraID}' / f'classgt_{frameID:05d}.png')
+            cv2.imwrite(file_path, image)
+        elif camtype == "inst_seg":
+            file_path = str(self.inst_seg_dir / f'Camera_{cameraID}' / f'instancegt_{frameID:05d}.png')
+            cv2.imwrite(file_path, image)
         
     def append_bboxes(self, frameID, cameraID, trackID, x_min, x_max, y_min, y_max):
         self.bboxes.append(
@@ -89,16 +110,6 @@ class TransformFile:
         height = "{:.6f}".format(2*dimension[1])
         length = "{:.6f}".format(2*dimension[2])
         obj_dimension = " ".join(map(str, [width, height, length]))
-        # w_x, w_y, w_z = [float(x) for x in location][0:3]
-        # w_x, w_y, w_z = [row[3] for row in location[:-1]]
-        # w_x = "{:.9f}".format(location[0][0])
-        # w_y = "{:.9f}".format(location[1][0])
-        # w_z = "{:.9f}".format(location[2][0])
-        # w_x = location.x
-        # w_y = location.y
-        # w_z = location.z
-        # w_z -= dimension[1]
-        # obj_location = " ".join(map(str, [float(w_y), -float(w_z), float(w_x)]))
         self.poses.append(
             f"{frameID} {cameraID} {trackID} 0 {obj_dimension} {location} {rotation} 0 0 0 0 0 0\n"
         )
@@ -155,7 +166,7 @@ class TransformFile:
         
         output_path = self.output_dir / file_path
         with open(output_path, 'w+') as f:
-            f.write("trackID label model color\n")
+            f.write("trackID label model color\n0 Car vehicle.tesla black\n")
             for line in vehicle_info:
                 if line.split()[0] in unique_ids:
                     f.write(line)

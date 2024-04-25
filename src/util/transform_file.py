@@ -17,6 +17,8 @@ class TransformFile:
         self.intrinsics = {}
         self.countImage = 0
         self.countDepth = 0
+        self.countClassSeg = 0
+        self.countInstSeg = 0
 
         root_path = Path(os.curdir)
         if output_dir is not None:
@@ -28,8 +30,12 @@ class TransformFile:
         self.output_dir.mkdir(exist_ok=True, parents=True)
         self.image_dir = self.output_dir / 'images'
         self.depth_dir = self.output_dir / 'depth'
+        self.class_seg_dir = self.output_dir / 'frames' / 'classSegmentation'
+        self.inst_seg_dir = self.output_dir / 'frames' / 'instanceSegmentation'
         self.image_dir.mkdir(exist_ok=True, parents=True)
         self.depth_dir.mkdir(exist_ok=True, parents=True)
+        self.class_seg_dir.mkdir(exist_ok=True, parents=True)
+        self.inst_seg_dir.mkdir(exist_ok=True, parents=True)
 
     def append_frame(self, image: np.ndarray, transform: carla.Transform, camtype: str = "rgb"):
         # Save the image to output
@@ -45,6 +51,15 @@ class TransformFile:
             file_path = str(self.depth_dir / f'{self.countDepth:04d}.png')
             cv2.imwrite(file_path, image)
             self.countDepth += 1
+            
+        elif camtype == "class_seg":
+            file_path = str(self.class_seg_dir / f'{self.countClassSeg:04d}.png')
+            cv2.imwrite(file_path, image)
+            self.countClassSeg += 1
+        elif camtype == "inst_seg":
+            file_path = str(self.inst_seg_dir / f'{self.countInstSeg:04d}.png')
+            cv2.imwrite(file_path, image)
+            self.countInstSeg += 1
         
 
     def compute_intrinsics(self, image_size_x, image_size_y, fov):

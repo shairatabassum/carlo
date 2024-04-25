@@ -119,7 +119,8 @@ experiment_2 = Experiment(
 camera_settings = [
     CameraSettings(image_size_x=200, image_size_y=150, fov=90),
     CameraSettings(image_size_x=400, image_size_y=300, fov=90),
-    CameraSettings(image_size_x=1242, image_size_y=375, fov=90),
+    # CameraSettings(image_size_x=1242, image_size_y=375, fov=90),
+    CameraSettings(image_size_x=1920, image_size_y=1080, fov=90),
     CameraSettings(image_size_x=1200, image_size_y=900, fov=90),
     CameraSettings(image_size_x=1600, image_size_y=1200, fov=90),
 ]
@@ -301,7 +302,7 @@ experiment_8 = Experiment(
 ##############################################
 
 experiment_test = Experiment(
-    experiment_name="movingcars",
+    experiment_name="three_cameras_dynamic",
     experiments=[
         ExperimentSettings(
             ticks_per_image=2,
@@ -309,13 +310,29 @@ experiment_test = Experiment(
             turns=3,
             camera_rigs=[
                 CameraRig(transform=carla.Transform(carla.Location(z=3.0),
-                                                    carla.Rotation(yaw=-10)), camera_settings=camera_settings[2], camtype='rgb'),
+                                                    carla.Rotation(yaw=-30)), camera_settings=camera_settings[2], camtype='rgb'),
                 CameraRig(transform=carla.Transform(carla.Location(z=3.0),
-                                                    carla.Rotation(yaw=-10)), camera_settings=camera_settings[2], camtype='depth'),
+                                                    carla.Rotation(yaw=-30)), camera_settings=camera_settings[2], camtype='depth'),
                 CameraRig(transform=carla.Transform(carla.Location(z=3.0),
-                                                    carla.Rotation(yaw=10)), camera_settings=camera_settings[2], camtype='rgb'),
+                                                    carla.Rotation(yaw=-30)), camera_settings=camera_settings[2], camtype='class_seg'),
                 CameraRig(transform=carla.Transform(carla.Location(z=3.0),
-                                                    carla.Rotation(yaw=10)), camera_settings=camera_settings[2], camtype='depth'),
+                                                    carla.Rotation(yaw=-30)), camera_settings=camera_settings[2], camtype='inst_seg'),
+                CameraRig(transform=carla.Transform(carla.Location(z=3.0),
+                                                    carla.Rotation(yaw=0)), camera_settings=camera_settings[2], camtype='rgb'),
+                CameraRig(transform=carla.Transform(carla.Location(z=3.0),
+                                                    carla.Rotation(yaw=0)), camera_settings=camera_settings[2], camtype='depth'),
+                CameraRig(transform=carla.Transform(carla.Location(z=3.0),
+                                                    carla.Rotation(yaw=0)), camera_settings=camera_settings[2], camtype='class_seg'),
+                CameraRig(transform=carla.Transform(carla.Location(z=3.0),
+                                                    carla.Rotation(yaw=0)), camera_settings=camera_settings[2], camtype='inst_seg'),
+                CameraRig(transform=carla.Transform(carla.Location(z=3.0),
+                                                    carla.Rotation(yaw=30)), camera_settings=camera_settings[2], camtype='rgb'),
+                CameraRig(transform=carla.Transform(carla.Location(z=3.0),
+                                                    carla.Rotation(yaw=30)), camera_settings=camera_settings[2], camtype='depth'),
+                CameraRig(transform=carla.Transform(carla.Location(z=3.0),
+                                                    carla.Rotation(yaw=30)), camera_settings=camera_settings[2], camtype='class_seg'),
+                CameraRig(transform=carla.Transform(carla.Location(z=3.0),
+                                                    carla.Rotation(yaw=30)), camera_settings=camera_settings[2], camtype='inst_seg'),
             ]
         ),
     ]

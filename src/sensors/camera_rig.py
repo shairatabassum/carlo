@@ -23,6 +23,10 @@ class CameraRig:
             self.camera = Camera(parent=parent, transform=self.transform, settings=self.camera_settings)
         elif self.camtype=='depth':
             self.camera = Camera(parent=parent, blueprint='sensor.camera.depth', transform=self.transform, settings=self.camera_settings)
+        elif self.camtype=='class_seg':
+            self.camera = Camera(parent=parent, blueprint='sensor.camera.semantic_segmentation', transform=self.transform, settings=self.camera_settings)
+        elif self.camtype=='inst_seg':
+            self.camera = Camera(parent=parent, blueprint='sensor.camera.instance_segmentation', transform=self.transform, settings=self.camera_settings)
         self.camera_queue = self.camera.add_numpy_queue()
         self.camera.start()
         return self
