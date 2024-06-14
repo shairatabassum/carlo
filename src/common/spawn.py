@@ -45,11 +45,23 @@ def spawn_vehicles(
     actors: List[carla.Vehicle] = []
     spawn_points = session.map.get_spawn_points()
     vehicle_info = []
+    
+    # bike_list = [
+    # # "vehicle.harley-davidson.low_rider",
+    # # "vehicle.kawasaki.ninja",
+    # # "vehicle.vespa.zx125",
+    # # "vehicle.yamaha.yzf",
+    # # "vehicle.bh.crossbike",
+    # # "vehicle.diamondback.century",
+    # # "vehicle.gazelle.omafiets"
+    # ]
+    
     while len(actors) < count:
         spawn_point = random.choice(spawn_points)
         # print(f"List of session blueprints: {session.blueprints}")
         # print(f"Filter: {filter}")
         blueprint = random.choice(session.blueprints.filter(filter))
+        # if blueprint.id:
         actor = session.world.try_spawn_actor(blueprint, spawn_point)
         if actor:
             actors.append(actor)

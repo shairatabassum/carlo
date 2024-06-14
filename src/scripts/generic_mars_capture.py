@@ -124,7 +124,7 @@ def run_session(experiment: Experiment):
         for index, run in enumerate(experiment.experiments):            
             ego = spawn_ego(autopilot=True, spawn_point=run.spawn_transform, filter="vehicle.tesla.model3")
             setup_traffic_manager(session.traffic_manager, ego, run.turns, run.percentage_speed_difference, run.path)
-            vehicle_info = spawn_vehicles(count=35, autopilot=True, filter="vehicle")
+            vehicle_info = spawn_vehicles(count=45, autopilot=True, filter="vehicle.*")
 
             session.world.tick()
             w_frame = session.world.get_snapshot().frame
@@ -344,6 +344,7 @@ def run_session(experiment: Experiment):
                                                 # degree = ego.get_transform().rotation.yaw - npc.get_transform().rotation.yaw
                                                 # deg_to_rad = degree * math.pi / 180
                                                 # rotation_y = deg_to_rad % math.pi
+                                                
 
                                                 transform_file.append_bboxes(frameID, camera_rgb_ID, npc.id, int(x_min), int(x_max), int(y_min), int(y_max))
                                                 transform_file.append_poses(frameID, camera_rgb_ID, npc.id, box_dict['extent'], box_dict['world_location'], box_dict['world_rotation'])

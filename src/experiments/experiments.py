@@ -123,6 +123,7 @@ camera_settings = [
     CameraSettings(image_size_x=1920, image_size_y=1080, fov=90),
     CameraSettings(image_size_x=1200, image_size_y=900, fov=90),
     CameraSettings(image_size_x=1600, image_size_y=1200, fov=90),
+    CameraSettings(image_size_x=3840, image_size_y=2160, fov=90),
 ]
 
 experiment_3 = Experiment(
@@ -301,8 +302,45 @@ experiment_8 = Experiment(
 # Experiment 9 and 10: Combined baseline
 ##############################################
 
+# experiment_test = Experiment(
+#     experiment_name="three_cam_bikes",
+#     experiments=[
+#         ExperimentSettings(
+#             ticks_per_image=2,
+#             percentage_speed_difference=50,
+#             turns=3,
+#             camera_rigs=[
+#                 CameraRig(transform=carla.Transform(carla.Location(z=3.0),
+#                                                     carla.Rotation(yaw=-30)), camera_settings=camera_settings[2], camtype='rgb'),
+#                 CameraRig(transform=carla.Transform(carla.Location(z=3.0),
+#                                                     carla.Rotation(yaw=-30)), camera_settings=camera_settings[2], camtype='depth'),
+#                 CameraRig(transform=carla.Transform(carla.Location(z=3.0),
+#                                                     carla.Rotation(yaw=-30)), camera_settings=camera_settings[2], camtype='class_seg'),
+#                 CameraRig(transform=carla.Transform(carla.Location(z=3.0),
+#                                                     carla.Rotation(yaw=-30)), camera_settings=camera_settings[2], camtype='inst_seg'),
+#                 CameraRig(transform=carla.Transform(carla.Location(z=3.0),
+#                                                     carla.Rotation(yaw=0)), camera_settings=camera_settings[2], camtype='rgb'),
+#                 CameraRig(transform=carla.Transform(carla.Location(z=3.0),
+#                                                     carla.Rotation(yaw=0)), camera_settings=camera_settings[2], camtype='depth'),
+#                 CameraRig(transform=carla.Transform(carla.Location(z=3.0),
+#                                                     carla.Rotation(yaw=0)), camera_settings=camera_settings[2], camtype='class_seg'),
+#                 CameraRig(transform=carla.Transform(carla.Location(z=3.0),
+#                                                     carla.Rotation(yaw=0)), camera_settings=camera_settings[2], camtype='inst_seg'),
+#                 CameraRig(transform=carla.Transform(carla.Location(z=3.0),
+#                                                     carla.Rotation(yaw=30)), camera_settings=camera_settings[2], camtype='rgb'),
+#                 CameraRig(transform=carla.Transform(carla.Location(z=3.0),
+#                                                     carla.Rotation(yaw=30)), camera_settings=camera_settings[2], camtype='depth'),
+#                 CameraRig(transform=carla.Transform(carla.Location(z=3.0),
+#                                                     carla.Rotation(yaw=30)), camera_settings=camera_settings[2], camtype='class_seg'),
+#                 CameraRig(transform=carla.Transform(carla.Location(z=3.0),
+#                                                     carla.Rotation(yaw=30)), camera_settings=camera_settings[2], camtype='inst_seg'),
+#             ]
+#         ),
+#     ]
+# )
+
 experiment_test = Experiment(
-    experiment_name="three_cameras_dynamic",
+    experiment_name="static_scene",
     experiments=[
         ExperimentSettings(
             ticks_per_image=2,
@@ -310,29 +348,11 @@ experiment_test = Experiment(
             turns=3,
             camera_rigs=[
                 CameraRig(transform=carla.Transform(carla.Location(z=3.0),
-                                                    carla.Rotation(yaw=-30)), camera_settings=camera_settings[2], camtype='rgb'),
-                CameraRig(transform=carla.Transform(carla.Location(z=3.0),
-                                                    carla.Rotation(yaw=-30)), camera_settings=camera_settings[2], camtype='depth'),
-                CameraRig(transform=carla.Transform(carla.Location(z=3.0),
-                                                    carla.Rotation(yaw=-30)), camera_settings=camera_settings[2], camtype='class_seg'),
-                CameraRig(transform=carla.Transform(carla.Location(z=3.0),
-                                                    carla.Rotation(yaw=-30)), camera_settings=camera_settings[2], camtype='inst_seg'),
-                CameraRig(transform=carla.Transform(carla.Location(z=3.0),
                                                     carla.Rotation(yaw=0)), camera_settings=camera_settings[2], camtype='rgb'),
                 CameraRig(transform=carla.Transform(carla.Location(z=3.0),
                                                     carla.Rotation(yaw=0)), camera_settings=camera_settings[2], camtype='depth'),
                 CameraRig(transform=carla.Transform(carla.Location(z=3.0),
-                                                    carla.Rotation(yaw=0)), camera_settings=camera_settings[2], camtype='class_seg'),
-                CameraRig(transform=carla.Transform(carla.Location(z=3.0),
                                                     carla.Rotation(yaw=0)), camera_settings=camera_settings[2], camtype='inst_seg'),
-                CameraRig(transform=carla.Transform(carla.Location(z=3.0),
-                                                    carla.Rotation(yaw=30)), camera_settings=camera_settings[2], camtype='rgb'),
-                CameraRig(transform=carla.Transform(carla.Location(z=3.0),
-                                                    carla.Rotation(yaw=30)), camera_settings=camera_settings[2], camtype='depth'),
-                CameraRig(transform=carla.Transform(carla.Location(z=3.0),
-                                                    carla.Rotation(yaw=30)), camera_settings=camera_settings[2], camtype='class_seg'),
-                CameraRig(transform=carla.Transform(carla.Location(z=3.0),
-                                                    carla.Rotation(yaw=30)), camera_settings=camera_settings[2], camtype='inst_seg'),
             ]
         ),
     ]
