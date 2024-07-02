@@ -1,94 +1,55 @@
-# Carlo
+# Carlo for generating NeRF-CARLA Dynamic (NCD) Dataset
 
-![credits to Stable Diffusion](media/logo-1.png)
+This repository provides two data parsers for generating training datasets for NeRFs:
+- **Static Scenes**: *generic_nerf_capture.py*
+- **Dynamic Scenes**: *generic_mars_capture.py*
 
-Install requirements first, then run with
+<br>
 
+# Static Scene Dataset for Nerfstudio API
+Defining the required camera setup in *src/experiments/experiments.py*, run the following command to get a sequence of RGB images with camera parameters for static scenes.
 ```sh
-python -m src.scripts.sicko
+python -m src.scripts.generic_nerf_capture
 ```
 
-(or for a more pleasant experience)
+<br>
 
+# NCD Dataset format for training dynamic scenes
+![NCD Dataset Structure](media/dataset_format.png)
+
+To generate the dataset for dynamic scenes, first set up the experimental configuration with the necessary camera setup in src/experiments/experiments.py. Define additional parameters such as the number of vehicles to spawn, vehicle types, autopilot settings, stopping criteria, and the ego vehicle location in src/scripts/generic_mars_capture.py. Then, run the following command to generate NCD dataset in a benchmark format.
 ```sh
-python -m src.scripts.camera
+python -m src.scripts.generic_mars_capture
 ```
 
+<br>
 
-# Running on Idun
+# RGB, Depth, and Semantic Camera on Static Background
+<p align="center">
+  <img src="media/static_rgb.jpg" width="33%" />
+  <img src="media/static_depth.png" width="33%" />
+  <img src="media/static_semantic.png" width="33%" />
+</p>
 
-Running all of this on Idun is actually pretty straight forward.
-First, I'll show how to do it manually on a login node,
-and then we'll build a SLURM job file to run it on compute nodes.
+<br>
 
-The key part is that we build Singularity(/Apptainer) images from the Carla/Carlo docker images, and these are quite easy to run.
+# Spawning Numerous Diverse Vehicles
+<p align="center">
+  <img src="media/objects2.png" width="33%" />
+  <img src="media/objects1.png" width="33%" />
+  <img src="media/objects3.png" width="33%" />
+</p>
 
-## Running Carla on Idun
+<br>
 
-```sh
-singularity exec --nv /cluster/apps/dev/carla/carla_latest.sif /home/carla/CarlaUE4.sh -RenderOffScreen
-```
+# 2D and 3D Bounding Box of Dynamic Objects
+<p align="center">
+  <img src="media/ss1_2dBox.jpg" width="48%" />
+  <img src="media/ss1_3dBox.png" width="48%" />
+</p>
 
-## Running Carlo on Idun
 
-Here we first need to build a Docker image, and then a Singularity image. I'm not sure if you can do this on Idun. I did the following steps locally on my laptop, then copied the image to Idun.
 
-```sh
-DOCKER_BUILDKIT=1 docker build . -t carlo:latest
-docker save -o carlo.tar carlo:latest
-apptainer build carlo.sif "docker-archive:$(pwd)/carlo.tar"
-# Copy to Idun if you built locally
-rsync -avzhP carlo.sif idun:carlo.sif
-```
+<br>
 
-Then, on Idun, we can run Carlo with
-
-```sh
-mkdir output
-singularity exec --nv --pwd /code carlo.sif python -m src.scripts.idun "$(pwd)/output"
-```
-
-## SLURM job file
-
-Write the following to `carla.slurm`:
-
-```sh
-#! /usr/bin/bash
-#SBATCH --job-name="CarlaSim"
-#SBATCH --partition=GPUQ
-#SBATCH --account=share-ie-idi
-#SBATCH --time=00:05:00
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=2
-#SBATCH --cpus-per-task=1
-#SBATCH --array=0-0
-#SBATCH --gres=gpu:1
-
-cd ${SLURM_SUBMIT_DIR}
-echo "Jobbnummer: ${SLURM_JOB_ID}"
-echo "Task-id innad i array: ${SLURM_ARRAY_TASK_ID}"
-
-mkdir worker-${SLURM_ARRAY_TASK_ID}
-cd worker-${SLURM_ARRAY_TASK_ID}
-
-export CARLA_PORT=$((57300 + ${SLURM_ARRAY_TASK_ID}))
-
-echo Starting server on port ${CARLA_PORT}
-singularity exec --nv /cluster/apps/dev/carla/carla_latest.sif /home/carla/CarlaUE4.sh -RenderOffScreen -carla-rpc-port=$CARLA_PORT &
-CARLA_PID=$!
-
-sleep 10
-echo Starting client
-singularity exec --nv --pwd /code ../carlo.sif python -m src.scripts.idun "$(pwd)"
-
-echo Killing $CARLA_PID
-kill $CARLA_PID
-
-echo Bye
-```
-
-Then, run it with
-
-```sh
-sbatch carla.slurm
-```
+In addition to the current implementation, many other enhancements can be added to the Python files, including features such as spawning pedestrians with tracking information, defining custom trajectory paths for each vehicle within CARLA. The NCD dataset can then be generated to train NeRFs in dynamic environments effectively.
