@@ -26,18 +26,19 @@ python -m src.scripts.generic_mars_capture
 
 # RGB, Depth, and Semantic Camera on Static Background
 <p align="center">
-  <img src="media/static_rgb.jpg" width="33%" />
-  <img src="media/static_depth.png" width="33%" />
-  <img src="media/static_semantic.png" width="33%" />
+  <img src="media/static_rgb.jpg" width="30%" />
+  <img src="media/static_depth.png" width="30%" />
+  <img src="media/static_semantic.png" width="30%" />
 </p>
 
 <br>
 
 # Spawning Numerous Diverse Vehicles
 <p align="center">
-  <img src="media/objects2.png" width="33%" />
-  <img src="media/objects1.png" width="33%" />
-  <img src="media/objects3.png" width="33%" />
+  <img src="media/objects2.png" width="48%" />
+  <img src="media/objects1.png" width="48%" />
+  <img src="media/objects4.png" width="48%" />
+  <img src="media/objects3.png" width="48%" />
 </p>
 
 <br>
