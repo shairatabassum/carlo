@@ -340,7 +340,7 @@ experiment_8 = Experiment(
 # )
 
 experiment_test = Experiment(
-    experiment_name="static_scene",
+    experiment_name="temp",
     experiments=[
         ExperimentSettings(
             ticks_per_image=2,
@@ -348,11 +348,7 @@ experiment_test = Experiment(
             turns=3,
             camera_rigs=[
                 CameraRig(transform=carla.Transform(carla.Location(z=3.0),
-                                                    carla.Rotation(yaw=0)), camera_settings=camera_settings[2], camtype='rgb'),
-                CameraRig(transform=carla.Transform(carla.Location(z=3.0),
-                                                    carla.Rotation(yaw=0)), camera_settings=camera_settings[2], camtype='depth'),
-                CameraRig(transform=carla.Transform(carla.Location(z=3.0),
-                                                    carla.Rotation(yaw=0)), camera_settings=camera_settings[2], camtype='inst_seg'),
+                                                    carla.Rotation(yaw=-40)), camera_settings=camera_settings[2], camtype='rgb'),
             ]
         ),
     ]

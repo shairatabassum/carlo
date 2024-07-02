@@ -391,7 +391,7 @@ def run_session(experiment: Experiment):
                 #     turns += 1
                 #     if (turns == run.turns):
                 #         stop_next_straight = True
-                if distance_traveled>=200:
+                if distance_traveled>=30:
                     stop_next_straight = True
                 previous_action = next_action
 
