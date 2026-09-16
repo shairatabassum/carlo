@@ -17,6 +17,12 @@ class CameraSettings:
     iso: Optional[float] = None
     gamma: Optional[float] = None
     shutter_speed: Optional[float] = None
+    lens_circle_multiplier: Optional[float] = 0.0
+    lens_circle_falloff: Optional[float] = 5.0
+    lens_k: Optional[float] = -1.0
+    lens_kcube: Optional[float] = 0.0
+    lens_x_size: Optional[float] = 0.08
+    lens_y_size: Optional[float] = 0.08
 
 
 class Camera(SensorBase[carla.Image, CameraSettings]):

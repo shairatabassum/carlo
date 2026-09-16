@@ -16,7 +16,16 @@ experiment_test = Experiment(
     experiments=[
         ExperimentSettings(
             stop_distance=100,
-            camera_rigs=base_camera_rig
+            camera_rigs=[
+                CameraRig(transform=carla.Transform(carla.Location(z=3.0), carla.Rotation(yaw=0)), 
+                          camera_settings=CameraSettings(image_size_x=1920, image_size_y=1280, fov=90)),
+                CameraRig(transform=carla.Transform(carla.Location(z=3.0), carla.Rotation(yaw=50)), 
+                          camera_settings=CameraSettings(image_size_x=1920, image_size_y=1280, fov=120)),
+                CameraRig(transform=carla.Transform(carla.Location(z=3.0), carla.Rotation(yaw=-50)), 
+                          camera_settings=CameraSettings(image_size_x=1920, image_size_y=1280, fov=120)),
+                CameraRig(transform=carla.Transform(carla.Location(z=3.0), carla.Rotation(yaw=180)), 
+                          camera_settings=CameraSettings(image_size_x=1920, image_size_y=1280, fov=120)),
+            ]
         ),
     ]
 )
@@ -339,17 +348,86 @@ experiment_8 = Experiment(
 #     ]
 # )
 
-experiment_test = Experiment(
-    experiment_name="temp",
+
+experiment_waymo = Experiment(
+    experiment_name="capture_waymo",
     experiments=[
         ExperimentSettings(
-            ticks_per_image=2,
+            ticks_per_image=8,
             percentage_speed_difference=50,
-            turns=3,
+            stop_distance=500,
             camera_rigs=[
-                CameraRig(transform=carla.Transform(carla.Location(z=3.0),
-                                                    carla.Rotation(yaw=-40)), camera_settings=camera_settings[2], camtype='rgb'),
-            ]
+                CameraRig(transform=carla.Transform(carla.Location(z=3.0), carla.Rotation(yaw=0)), 
+                          camera_settings=CameraSettings(image_size_x=1920, image_size_y=1280, fov=90)),
+            ],
+            path="city-wander"
+        ),
+    ]
+)
+
+
+# experiment_test = Experiment(
+#     experiment_name="laneshift_extended",
+#     experiments=[
+#         ExperimentSettings(
+#             ticks_per_image=8,
+#             percentage_speed_difference=50,
+#             stop_distance=1400,
+#             camera_rigs=[
+#                 CameraRig(transform=carla.Transform(carla.Location(z=3.0), carla.Rotation(yaw=0)), 
+#                           camera_settings=CameraSettings(image_size_x=1920, image_size_y=1280, fov=90)),
+#                 CameraRig(transform=carla.Transform(carla.Location(z=3.0), carla.Rotation(yaw=-20)), 
+#                           camera_settings=CameraSettings(image_size_x=1920, image_size_y=1280, fov=90)),
+#                 CameraRig(transform=carla.Transform(carla.Location(z=3.0), carla.Rotation(yaw=-30)), 
+#                           camera_settings=CameraSettings(image_size_x=1920, image_size_y=1280, fov=90)),
+#                 CameraRig(transform=carla.Transform(carla.Location(z=3.0), carla.Rotation(yaw=-40)), 
+#                           camera_settings=CameraSettings(image_size_x=1920, image_size_y=1280, fov=90)),
+#                 CameraRig(transform=carla.Transform(carla.Location(z=3.0), carla.Rotation(yaw=-50)), 
+#                           camera_settings=CameraSettings(image_size_x=1920, image_size_y=1280, fov=90)),
+#                 CameraRig(transform=carla.Transform(carla.Location(z=3.0), carla.Rotation(yaw=0, pitch=-20)), 
+#                           camera_settings=CameraSettings(image_size_x=1920, image_size_y=1280, fov=90)),
+#                 CameraRig(transform=carla.Transform(carla.Location(y=-0.5, z=3.0), carla.Rotation(yaw=0, pitch=-20)), 
+#                           camera_settings=CameraSettings(image_size_x=1920, image_size_y=1280, fov=90)),
+#                 CameraRig(transform=carla.Transform(carla.Location(y=-2.0, z=3.0), carla.Rotation(yaw=0)), 
+#                           camera_settings=CameraSettings(image_size_x=1920, image_size_y=1280, fov=90)),
+#                 CameraRig(transform=carla.Transform(carla.Location(y=-3.0, z=3.0), carla.Rotation(yaw=0)), 
+#                           camera_settings=CameraSettings(image_size_x=1920, image_size_y=1280, fov=90)),
+#             ],
+#             path="city-wander"
+#         ),
+#     ]
+# )
+
+experiment_test = Experiment(
+    experiment_name="nikt_fov60",
+    experiments=[
+        ExperimentSettings(
+            ticks_per_image=8,
+            percentage_speed_difference=50,
+            stop_distance=1400,
+            camera_rigs=[
+                CameraRig(transform=carla.Transform(carla.Location(z=3.0), carla.Rotation(yaw=0)), 
+                          camera_settings=CameraSettings(image_size_x=1920, image_size_y=1280, fov=60)),
+                CameraRig(transform=carla.Transform(carla.Location(z=3.0), carla.Rotation(yaw=-45)), 
+                          camera_settings=CameraSettings(image_size_x=1920, image_size_y=1280, fov=60)),
+                CameraRig(transform=carla.Transform(carla.Location(z=3.0), carla.Rotation(yaw=45)), 
+                          camera_settings=CameraSettings(image_size_x=1920, image_size_y=1280, fov=60)),
+                CameraRig(transform=carla.Transform(carla.Location(z=3.0), carla.Rotation(yaw=-22.5)), 
+                          camera_settings=CameraSettings(image_size_x=1920, image_size_y=1280, fov=60)),
+                CameraRig(transform=carla.Transform(carla.Location(z=3.0), carla.Rotation(yaw=22.5)), 
+                          camera_settings=CameraSettings(image_size_x=1920, image_size_y=1280, fov=60)),
+                CameraRig(transform=carla.Transform(carla.Location(y=-2.0, z=3.0), carla.Rotation(yaw=0)), 
+                          camera_settings=CameraSettings(image_size_x=1920, image_size_y=1280, fov=60)),
+                CameraRig(transform=carla.Transform(carla.Location(y=-4.0, z=3.0), carla.Rotation(yaw=0)), 
+                          camera_settings=CameraSettings(image_size_x=1920, image_size_y=1280, fov=60)),
+                CameraRig(transform=carla.Transform(carla.Location(y=2.0, z=3.0), carla.Rotation(yaw=0)), 
+                          camera_settings=CameraSettings(image_size_x=1920, image_size_y=1280, fov=60)),
+                CameraRig(transform=carla.Transform(carla.Location(y=4.0, z=3.0), carla.Rotation(yaw=0)), 
+                          camera_settings=CameraSettings(image_size_x=1920, image_size_y=1280, fov=60)),
+                                
+                
+            ],
+            path="city-wander"
         ),
     ]
 )
@@ -394,7 +472,7 @@ experiment_10 = Experiment(
 baseline_experiment_settings = ExperimentSettings(
     ticks_per_image=3,
     percentage_speed_difference=50,
-    turns=3,
+    stop_distance=125,
     camera_rigs=[
         CameraRig(transform=carla.Transform(carla.Location(z=3.0),
                                             carla.Rotation(yaw=-10)), camera_settings=camera_settings[1]),

@@ -124,7 +124,7 @@ def run_session(experiment: Experiment):
         for index, run in enumerate(experiment.experiments):            
             ego = spawn_ego(autopilot=True, spawn_point=run.spawn_transform, filter="vehicle.tesla.model3")
             setup_traffic_manager(session.traffic_manager, ego, run.turns, run.percentage_speed_difference, run.path)
-            vehicle_info = spawn_vehicles(count=45, autopilot=True, filter="vehicle.*")
+            vehicle_info = spawn_vehicles(count=0, autopilot=True, filter="vehicle.*")
 
             session.world.tick()
             w_frame = session.world.get_snapshot().frame
@@ -391,7 +391,7 @@ def run_session(experiment: Experiment):
                 #     turns += 1
                 #     if (turns == run.turns):
                 #         stop_next_straight = True
-                if distance_traveled>=30:
+                if distance_traveled>=30000:
                     stop_next_straight = True
                 previous_action = next_action
 
@@ -412,5 +412,5 @@ def run_session(experiment: Experiment):
         cv2.destroyWindow(window_title)
 
 
-experiment = experiments.experiment_test
+experiment = experiments.experiment_waymo
 run_session(experiment)
